@@ -17,6 +17,7 @@ type StoryRow = Omit<Story, "sources" | "angles"> & {
 
 const STORY_COLUMNS =
   "briefing_date, rank, slug, title, topic, region, dek, why_it_matters, agree, disagree, agreement_level, facts, " +
+  "image_url, image_alt, " +
   "story_sources (ref, url, title, outlet, country, leaning, published_at), " +
   "angles (position, key, label, stance, body, refs)";
 

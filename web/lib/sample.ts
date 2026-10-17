@@ -27,6 +27,8 @@ const plastic: Story = {
   agree: "The deal is the largest of its kind, and the 2028 export ban is its strongest part.",
   disagree: "Whether enforcement is strong enough, and who pays the cost of switching.",
   agreement_level: "mixed",
+  image_url: "/samples/sample-plastic-treaty.svg",
+  image_alt: "A plastic bottle floating on stylized ocean waves under a low sun.",
   facts: [
     { text: "Forty-one countries signed the treaty after a week of talks.", refs: [1, 4] },
     { text: "It sets a target of halving plastic waste reaching the sea by 2035.", refs: [2] },
@@ -50,7 +52,16 @@ const plastic: Story = {
   ],
 };
 
-function brief(rank: number, slug: string, title: string, topic: string, region: string, dek: string, level: Story["agreement_level"]): Story {
+function brief(
+  rank: number,
+  slug: string,
+  title: string,
+  topic: string,
+  region: string,
+  dek: string,
+  level: Story["agreement_level"],
+  imageAlt: string,
+): Story {
   return {
     briefing_date: "2026-10-16",
     rank,
@@ -63,6 +74,8 @@ function brief(rank: number, slug: string, title: string, topic: string, region:
     agree: "The basic facts of the event are not disputed.",
     disagree: "What it means and who benefits.",
     agreement_level: level,
+    image_url: `/samples/${slug}.svg`,
+    image_alt: imageAlt,
     facts: [{ text: dek.split(". ")[0] + ".", refs: [1, 2] }],
     sources: sources(slug, [
       ["Sample Left Daily", "United Kingdom", "left"],
@@ -84,10 +97,10 @@ export const SAMPLE_BRIEFING: Briefing = {
   sample: true,
   stories: [
     plastic,
-    brief(2, "sample-rates", "Central bank raises rates a quarter point", "Economy", "Americas", "Markets expected the move. The debate is over what it means for mortgages and jobs.", "views split"),
-    brief(3, "sample-ai-ads", "New rules require labels on AI-made political ads", "Technology", "Europe", "Regulators say voters deserve to know. Platforms warn the rules are hard to enforce.", "broad agreement"),
-    brief(4, "sample-vaccine-plant", "Regional vaccine plant opens after two-year delay", "Health", "Africa", "The plant will supply three neighbouring countries. Cost and ownership are disputed.", "mixed"),
-    brief(5, "sample-ceasefire", "Ceasefire talks resume with a new mediator", "Conflict", "Middle East", "Both sides sent delegations. Neighbouring governments describe the stakes very differently.", "views split"),
-    brief(6, "sample-solar", "Grid operator plans record solar build-out", "Energy", "Asia-Pacific", "Supporters cite cheaper power. Rural communities worry about land use.", "mixed"),
+    brief(2, "sample-rates", "Central bank raises rates a quarter point", "Economy", "Americas", "Markets expected the move. The debate is over what it means for mortgages and jobs.", "views split", "A small house beside a staircase of bars that climbs upward."),
+    brief(3, "sample-ai-ads", "New rules require labels on AI-made political ads", "Technology", "Europe", "Regulators say voters deserve to know. Platforms warn the rules are hard to enforce.", "broad agreement", "A ballot box beside a phone screen marked with a large tag."),
+    brief(4, "sample-vaccine-plant", "Regional vaccine plant opens after two-year delay", "Health", "Africa", "The plant will supply three neighbouring countries. Cost and ownership are disputed.", "mixed", "A factory building with a row of vaccine vials in front of it."),
+    brief(5, "sample-ceasefire", "Ceasefire talks resume with a new mediator", "Conflict", "Middle East", "Both sides sent delegations. Neighbouring governments describe the stakes very differently.", "views split", "A dove flying above a long table with an empty chair at each end."),
+    brief(6, "sample-solar", "Grid operator plans record solar build-out", "Energy", "Asia-Pacific", "Supporters cite cheaper power. Rural communities worry about land use.", "mixed", "Rows of solar panels across rolling hills under a large sun."),
   ],
 };

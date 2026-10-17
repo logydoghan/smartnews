@@ -18,7 +18,9 @@ Judge importance by consequences for many people and by how widely the event is 
 across countries and outlets, not by sensationalism. Prefer events covered by several \
 outlets. Leave out sports results, celebrity news, product reviews, opinion columns that \
 report no event, and purely local stories. Every article id you list must come from the \
-input, and an article belongs to at most one story. Order stories from most to least important."""
+input, and an article belongs to at most one story. Order stories from most to least important.
+
+Write each story's title and why_it_matters in your own words rather than reusing an outlet's headline."""
 
 
 @dataclass

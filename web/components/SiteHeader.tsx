@@ -19,7 +19,8 @@ export function SiteFooter() {
       <p className="mx-auto max-w-[1240px] px-6 py-6 text-[13px] leading-relaxed text-muted">
         Stories are gathered automatically each morning from public news sources. Each angle is a
         summary written by AI from the coverage it cites, and every claim links to its source. The
-        angles describe how each side sees a story; they are not this site&apos;s opinion.
+        angles describe how each side sees a story; they are not this site&apos;s opinion. Story images
+        are illustrations made by AI, not photos of the events.
       </p>
     </footer>
   );

@@ -38,6 +38,9 @@ export interface Story {
   disagree: string;
   agreement_level: AgreementLevel;
   facts: Fact[];
+  /** AI illustration made by the image agent; null when it has none. */
+  image_url: string | null;
+  image_alt: string | null;
   sources: Source[];
   angles: Angle[];
 }

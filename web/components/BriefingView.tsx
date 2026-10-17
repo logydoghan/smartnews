@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { StoryImage } from "@/components/StoryImage";
 import { plural } from "@/lib/format";
 import { REGIONS, type Story } from "@/lib/types";
 
@@ -42,6 +43,14 @@ export function BriefingView({ stories }: { stories: Story[] }) {
               href={`/story/${s.slug}`}
               className="group flex flex-col gap-2.5 border-b border-rule pb-6"
             >
+              {s.image_url && (
+                <StoryImage
+                  src={s.image_url}
+                  alt=""
+                  sizes="(min-width: 1240px) 400px, (min-width: 640px) 50vw, 100vw"
+                  className="mb-1.5"
+                />
+              )}
               <div className="text-xs font-semibold uppercase tracking-wider text-muted">{s.topic}</div>
               <div className="font-serif text-[23px] font-semibold leading-tight group-hover:text-accent">{s.title}</div>
               <p className="text-[15px] leading-normal text-body">{s.dek}</p>
@@ -61,6 +70,16 @@ function LeadStory({ story }: { story: Story }) {
   return (
     <article className="grid grid-cols-[repeat(auto-fit,minmax(320px,1fr))] gap-10 border-t-[3px] border-b border-t-ink border-b-rule pt-8 pb-10">
       <div className="flex flex-col gap-4">
+        {story.image_url && (
+          <Link href={href} tabIndex={-1} aria-hidden="true" className="mb-2">
+            <StoryImage
+              src={story.image_url}
+              alt=""
+              sizes="(min-width: 1240px) 600px, (min-width: 768px) 50vw, 100vw"
+              eager
+            />
+          </Link>
+        )}
         <div className="text-[13px] font-semibold uppercase tracking-wider text-muted">Top story · {story.topic}</div>
         <h2 className="font-serif text-[40px] leading-[1.12] font-bold tracking-tight">
           <Link href={href} className="hover:text-accent">

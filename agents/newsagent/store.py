@@ -55,6 +55,9 @@ def to_records(day: date, items: list[AnalyzedStory]) -> dict:
                 "disagree": a.disagree,
                 "agreement_level": a.agreement_level,
                 "facts": [f.model_dump() for f in a.facts],
+                # Filled in by the image agent when it runs.
+                "image_url": None,
+                "image_alt": None,
                 "sources": [
                     {
                         "ref": n,
@@ -100,12 +103,12 @@ def save_to_database(database_url: str, records: dict) -> None:
         for s in records["stories"]:
             (story_id,) = conn.execute(
                 """insert into stories (briefing_date, rank, slug, title, topic, region, dek,
-                       why_it_matters, agree, disagree, agreement_level, facts)
-                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id""",
+                       why_it_matters, agree, disagree, agreement_level, facts, image_url, image_alt)
+                   values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id""",
                 (
                     records["date"], s["rank"], s["slug"], s["title"], s["topic"], s["region"],
                     s["dek"], s["why_it_matters"], s["agree"], s["disagree"],
-                    s["agreement_level"], Jsonb(s["facts"]),
+                    s["agreement_level"], Jsonb(s["facts"]), s["image_url"], s["image_alt"],
                 ),
             ).fetchone()
             with conn.cursor() as cur:

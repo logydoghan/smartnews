@@ -21,6 +21,8 @@ the source numbers that report each one.
 - Each angle describes how that side sees the story, drawn from the sources you cite for \
 it. Represent each view fairly and in its strongest form, without endorsing or mocking it.
 - Cite only source numbers from the list. Never invent quotes, numbers or events.
+- Write everything in your own words. Do not copy sentences or distinctive phrases from \
+the sources; when exact wording matters, quote at most a few words in quotation marks.
 - If no source speaks for an angle, leave that angle out rather than guessing.
 - Write plainly for a general reader."""
 

@@ -39,6 +39,10 @@ class Settings:
     use_gdelt: bool = True
     database_url: str | None = None
     angles: tuple[Angle, ...] = field(default=DEFAULT_ANGLES)
+    # Image agent: runs when the image service key and Supabase Storage settings are set.
+    images: bool = True
+    supabase_url: str | None = None
+    supabase_secret_key: str | None = None
 
     @classmethod
     def from_env(cls) -> "Settings":
@@ -51,4 +55,7 @@ class Settings:
             lookback_hours=int(os.environ.get("NEWSAGENT_LOOKBACK_HOURS", cls.lookback_hours)),
             use_gdelt=os.environ.get("NEWSAGENT_USE_GDELT", "1") != "0",
             database_url=os.environ.get("DATABASE_URL") or None,
+            images=os.environ.get("NEWSAGENT_IMAGES", "1") != "0",
+            supabase_url=os.environ.get("SUPABASE_URL") or None,
+            supabase_secret_key=os.environ.get("SUPABASE_SECRET_KEY") or None,
         )

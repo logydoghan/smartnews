@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AngleCompare } from "@/components/AngleCompare";
 import { LeanBar } from "@/components/LeanBar";
+import { StoryImage } from "@/components/StoryImage";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 import { getLatestBriefing, getStory } from "@/lib/data";
 import { formatBriefingDate, plural } from "@/lib/format";
@@ -58,6 +59,14 @@ async function StoryContent({ params }: Pick<PageProps<"/story/[slug]">, "params
           {plural(story.sources.length, "source")} from {plural(countries.size, "country", "countries")} ·{" "}
           {plural(story.angles.length, "angle")} · analysis written by AI
         </div>
+        {story.image_url && (
+          <figure className="mt-2 flex flex-col gap-2">
+            <StoryImage src={story.image_url} alt={story.image_alt ?? ""} sizes="(min-width: 860px) 820px, 100vw" eager />
+            <figcaption className="text-[13px] text-muted">
+              Illustration made by AI to suggest the subject. It does not show the real event.
+            </figcaption>
+          </figure>
+        )}
       </section>
 
       <section aria-labelledby="facts" className="grid grid-cols-[repeat(auto-fit,minmax(min(320px,100%),1fr))] gap-8">
