@@ -1,4 +1,4 @@
-"""Run the full morning pipeline: collect, cluster, analyze, save.
+"""Run the full morning pipeline: collect, cluster, analyze, illustrate, save.
 
     python -m newsagent.run                 # save to DATABASE_URL
     python -m newsagent.run --json out.json # also (or only) write JSON
@@ -16,6 +16,7 @@ from .analyze import analyze_story
 from .cluster import cluster_articles
 from .collect import collect
 from .config import Settings
+from .images import SupabaseStorage, add_images, make_generator
 from .llm import ClaudeLLM, LLMError, StructuredLLM
 from .store import AnalyzedStory, save_to_database, to_records, write_json
 
@@ -25,7 +26,9 @@ log = logging.getLogger("newsagent")
 def run(settings: Settings, llm: StructuredLLM) -> dict:
     day = datetime.now(timezone.utc).date()
     articles = collect(settings.lookback_hours, settings.max_articles_per_feed, settings.use_gdelt)
-    stories = cluster_articles(llm, articles, settings.max_stories, settings.min_outlets_per_story)
+    stories = cluster_articles(
+        llm, articles, settings.max_stories, settings.min_outlets_per_story, settings.stories_per_category
+    )
 
     analyzed: list[AnalyzedStory] = []
     for story in stories:
@@ -48,8 +51,9 @@ def main(argv: list[str] | None = None) -> int:
     if not args.no_db and not settings.database_url:
         parser.error("DATABASE_URL is not set (use --no-db with --json for a dry run)")
 
+    llm = ClaudeLLM(settings.model)
     try:
-        records = run(settings, ClaudeLLM(settings.model))
+        records = run(settings, llm)
     except LLMError as exc:
         log.error("Briefing failed: %s", exc)
         return 1
@@ -57,12 +61,26 @@ def main(argv: list[str] | None = None) -> int:
         log.error("No stories were produced; leaving the previous briefing in place")
         return 1
 
-    if args.json:
-        write_json(args.json, records)
-        log.info("Wrote %s", args.json)
-    if not args.no_db:
-        save_to_database(settings.database_url, records)
-        log.info("Saved briefing for %s with %d stories", records["date"], len(records["stories"]))
+    def save() -> None:
+        if args.json:
+            write_json(args.json, records)
+            log.info("Wrote %s", args.json)
+        if not args.no_db:
+            save_to_database(settings.database_url, records)
+            log.info("Saved briefing for %s with %d stories", records["date"], len(records["stories"]))
+
+    # Publish before drawing, so a slow or failing image service never costs the day's briefing.
+    save()
+
+    generator = make_generator(settings) if settings.images else None
+    if generator and settings.supabase_url and settings.supabase_secret_key:
+        store = SupabaseStorage(settings.supabase_url, settings.supabase_secret_key)
+        made = add_images(records, llm, generator, store)
+        log.info("Illustrated %d of %d stories", made, len(records["stories"]))
+        if made:
+            save()  # replaces the day's briefing, now with images
+    elif settings.images:
+        log.warning("Skipping images: set RECRAFT_API_KEY, SUPABASE_URL and SUPABASE_SECRET_KEY")
     return 0
 
 

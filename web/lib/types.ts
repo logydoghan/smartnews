@@ -31,13 +31,16 @@ export interface Story {
   slug: string;
   title: string;
   topic: string;
-  region: string;
+  category: Category;
   dek: string;
   why_it_matters: string;
   agree: string;
   disagree: string;
   agreement_level: AgreementLevel;
   facts: Fact[];
+  /** AI illustration made by the image agent; null when it has none. */
+  image_url: string | null;
+  image_alt: string | null;
   sources: Source[];
   angles: Angle[];
 }
@@ -51,4 +54,6 @@ export interface Briefing {
   sample?: boolean;
 }
 
-export const REGIONS = ["Americas", "Europe", "Asia-Pacific", "Middle East", "Africa", "Global"] as const;
+/** The site's sections, in the order the home page shows them. */
+export const CATEGORIES = ["Politics", "Finance", "Technology", "Health", "Entertainment", "Sports"] as const;
+export type Category = (typeof CATEGORIES)[number];

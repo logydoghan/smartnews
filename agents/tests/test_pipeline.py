@@ -6,11 +6,11 @@ from newsagent.config import DEFAULT_ANGLES
 from newsagent.models import AngleView, ClusterResult, Fact, StoryAnalysis, StoryCluster
 from newsagent.store import AnalyzedStory, slugify, to_records
 
-from .conftest import FakeLLM
+from .conftest import FakeLLM, make_article
 
 
-def cluster(ids, title="Treaty signed"):
-    return StoryCluster(title=title, topic="Climate", region="Global", article_ids=ids,
+def cluster(ids, title="Treaty signed", category="Politics"):
+    return StoryCluster(title=title, topic="Climate", category=category, article_ids=ids,
                         why_it_matters="It affects every coast.")
 
 
@@ -39,20 +39,36 @@ def test_build_stories_filters_bad_ids_reuse_and_thin_coverage(articles):
         cluster([0, 3], "One outlet"),   # both Left Daily (0 already used anyway)
         cluster([2, 3], "Second"),
     ]
-    stories = build_stories(clusters, articles, min_outlets=2, max_stories=5)
+    stories = build_stories(clusters, articles, min_outlets=2, max_stories=5, per_category=5)
 
     assert [s.title for s in stories] == ["Treaty signed", "Second"]
     assert [a.url for a in stories[0].articles] == [articles[0].url, articles[1].url]
 
 
 def test_build_stories_caps_count(articles):
-    stories = build_stories([cluster([0, 1]), cluster([2, 3], "B")], articles, 2, max_stories=1)
+    stories = build_stories([cluster([0, 1]), cluster([2, 3], "B")], articles, 2, max_stories=1,
+                            per_category=2)
     assert len(stories) == 1
+
+
+def test_build_stories_keeps_at_most_n_per_category(articles):
+    articles = articles + [make_article(4, "Right Times", "right"), make_article(5, "Center Wire")]
+    clusters = [
+        cluster([0, 1], "Vote", "Politics"),
+        cluster([2, 3], "Summit", "Politics"),   # Politics is full; its ids stay free
+        cluster([2, 4], "Final", "Sports"),
+        cluster([3, 5], "Merger", "Finance"),
+    ]
+    stories = build_stories(clusters, articles, min_outlets=2, max_stories=6, per_category=1)
+
+    assert [(s.title, s.category) for s in stories] == [
+        ("Vote", "Politics"), ("Final", "Sports"), ("Merger", "Finance"),
+    ]
 
 
 def test_cluster_articles_sends_numbered_headlines(articles):
     llm = FakeLLM(ClusterResult(stories=[cluster([0, 1])]))
-    stories = cluster_articles(llm, articles, max_stories=3, min_outlets=2)
+    stories = cluster_articles(llm, articles, max_stories=3, min_outlets=2, per_category=2)
 
     _, prompt, schema = llm.calls[0]
     assert schema is ClusterResult
@@ -62,11 +78,11 @@ def test_cluster_articles_sends_numbered_headlines(articles):
 
 def test_cluster_articles_skips_llm_when_empty():
     llm = FakeLLM()
-    assert cluster_articles(llm, [], 3, 2) == [] and llm.calls == []
+    assert cluster_articles(llm, [], 3, 2, 2) == [] and llm.calls == []
 
 
 def test_clean_analysis_drops_bad_refs_and_orders_angles(articles):
-    story = build_stories([cluster([0, 1])], articles, 2, 1)[0]
+    story = build_stories([cluster([0, 1])], articles, 2, 1, 1)[0]
     cleaned = clean_analysis(analysis(), story, DEFAULT_ANGLES)
 
     assert [f.refs for f in cleaned.facts] == [[1]]
@@ -74,7 +90,7 @@ def test_clean_analysis_drops_bad_refs_and_orders_angles(articles):
 
 
 def test_analyze_story_prompt_lists_sources_and_angles(articles):
-    story = build_stories([cluster([0, 1])], articles, 2, 1)[0]
+    story = build_stories([cluster([0, 1])], articles, 2, 1, 1)[0]
     llm = FakeLLM(analysis())
     analyze_story(llm, story, DEFAULT_ANGLES)
 
@@ -85,7 +101,7 @@ def test_analyze_story_prompt_lists_sources_and_angles(articles):
 
 
 def test_to_records_shapes_briefing(articles):
-    story = build_stories([cluster([0, 1, 2])], articles, 2, 1)[0]
+    story = build_stories([cluster([0, 1, 2])], articles, 2, 1, 1)[0]
     records = to_records(date(2026, 10, 16), [AnalyzedStory(story, clean_analysis(analysis(), story, DEFAULT_ANGLES))])
 
     assert records["date"] == "2026-10-16"
@@ -100,7 +116,7 @@ def test_to_records_makes_slugs_unique(articles):
     long = "European Union leaders agree new sanctions package against Russia over"
     stories = build_stories(
         [cluster([0, 1], long + " energy"), cluster([2, 3], long + " oil"), cluster([], "x")],
-        articles, 1, 3,
+        articles, 1, 3, 3,
     )
     items = [AnalyzedStory(s, analysis()) for s in stories]
     slugs = [s["slug"] for s in to_records(date(2026, 10, 17), items)["stories"]]

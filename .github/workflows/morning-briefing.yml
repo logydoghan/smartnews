@@ -24,6 +24,10 @@ jobs:
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          # Image agent; it is skipped while these are not set.
+          RECRAFT_API_KEY: ${{ secrets.RECRAFT_API_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: newsagent --json briefing.json
       - uses: actions/upload-artifact@v4
         if: always()

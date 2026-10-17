@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="1024" viewBox="0 0 1536 1024">
+<defs><filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.12  0 0 0 0 0.18  0 0 0 0 0.29  0 0 0 0.09 0"/></filter></defs>
+<rect width="1536" height="1024" fill="#f3ede1"/>
+<!-- sun -->
+<circle cx="1090" cy="350" r="118" fill="#d4a24c"/>
+<!-- far hills -->
+<path d="M0 652 C260 600 520 614 760 642 C1000 670 1250 600 1536 630 V1024 H0Z" fill="#c5cfdb"/>
+<!-- distant acacia -->
+<g fill="#7d8ea3">
+<rect x="1318" y="556" width="8" height="70"/>
+<path d="M1322 590 L1300 560 M1322 598 L1346 564" stroke="#7d8ea3" stroke-width="6"/>
+<ellipse cx="1322" cy="552" rx="62" ry="13"/>
+</g>
+<!-- stack -->
+<rect x="948" y="240" width="42" height="210" fill="#7d8ea3"/>
+<rect x="948" y="262" width="42" height="18" fill="#b4473a"/>
+<!-- main hall, sawtooth roof -->
+<path d="M400 740 V470 L560 390 V470 L720 390 V470 L880 390 V470 L1040 390 V740 Z" fill="#1f2f4a"/>
+<g fill="#c5cfdb">
+<rect x="548" y="402" width="8" height="64"/>
+<rect x="708" y="402" width="8" height="64"/>
+<rect x="868" y="402" width="8" height="64"/>
+<rect x="1028" y="402" width="8" height="64"/>
+<rect x="440" y="510" width="38" height="78" rx="3"/>
+<rect x="518" y="510" width="38" height="78" rx="3"/>
+<rect x="596" y="510" width="38" height="78" rx="3"/>
+<rect x="674" y="510" width="38" height="78" rx="3"/>
+<rect x="752" y="510" width="38" height="78" rx="3"/>
+<rect x="830" y="510" width="38" height="78" rx="3"/>
+<rect x="908" y="510" width="38" height="78" rx="3"/>
+<rect x="986" y="510" width="38" height="78" rx="3"/>
+</g>
+<!-- annex -->
+<rect x="1040" y="560" width="150" height="180" fill="#7d8ea3"/>
+<rect x="1030" y="548" width="170" height="16" fill="#1f2f4a"/>
+<rect x="1070" y="600" width="90" height="22" fill="#c5cfdb"/>
+<!-- tanks -->
+<rect x="306" y="548" width="40" height="192" rx="20" fill="#7d8ea3"/>
+<rect x="352" y="590" width="40" height="150" rx="20" fill="#7d8ea3"/>
+<rect x="306" y="600" width="86" height="8" fill="#1f2f4a"/>
+<!-- savanna ground -->
+<path d="M0 744 C300 708 600 724 900 718 C1150 714 1350 696 1536 726 V1024 H0Z" fill="#d4a24c"/>
+<!-- foreground -->
+<path d="M0 892 C360 864 760 878 1100 868 C1300 862 1440 870 1536 878 V1024 H0Z" fill="#c5cfdb"/>
+<!-- near acacia -->
+<g fill="#1f2f4a">
+<path d="M184 748 L191 622 L199 622 L204 748 Z"/>
+<path d="M193 652 L160 614 M195 642 L230 604" stroke="#1f2f4a" stroke-width="8" stroke-linecap="round"/>
+<ellipse cx="192" cy="602" rx="88" ry="19"/>
+<ellipse cx="212" cy="587" rx="54" ry="13"/>
+</g>
+<!-- grass -->
+<g stroke="#1f2f4a" stroke-width="4" stroke-linecap="round" fill="none">
+<path d="M282 812 l-6 -22 M290 812 l2 -26 M298 812 l8 -20"/>
+<path d="M1252 796 l-6 -20 M1260 796 l2 -24 M1268 796 l8 -18"/>
+</g>
+<!-- shelf -->
+<rect x="420" y="896" width="696" height="14" rx="7" fill="#1f2f4a"/>
+<!-- vials -->
+<g id="v">
+<rect x="488" y="686" width="56" height="44" fill="#f3ede1" stroke="#1f2f4a" stroke-width="6"/>
+<rect x="476" y="720" width="80" height="176" rx="14" fill="#f3ede1" stroke="#1f2f4a" stroke-width="6"/>
+<rect x="480" y="796" width="72" height="96" rx="10" fill="#b4473a"/>
+<rect x="490" y="736" width="10" height="140" rx="5" fill="#c5cfdb"/>
+<rect x="482" y="660" width="68" height="34" rx="4" fill="#7d8ea3" stroke="#1f2f4a" stroke-width="6"/>
+<rect x="490" y="638" width="52" height="24" rx="6" fill="#b4473a"/>
+</g>
+<use href="#v" x="120"/>
+<use href="#v" x="240"/>
+<use href="#v" x="360"/>
+<use href="#v" x="480"/>
+<rect width="1536" height="1024" filter="url(#grain)"/>
+</svg>
