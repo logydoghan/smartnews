@@ -21,7 +21,7 @@ def fake_client(captured: list, *, text: str, stop_reason: str = "end_turn", sto
     return anthropic.Anthropic(api_key="test", http_client=httpx2.Client(transport=httpx2.MockTransport(handler)))
 
 
-VALID = json.dumps({"stories": [{"title": "T", "topic": "Climate", "region": "Global",
+VALID = json.dumps({"stories": [{"title": "T", "topic": "Climate", "category": "Politics",
                                  "article_ids": [0, 1], "why_it_matters": "W"}]})
 
 

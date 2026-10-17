@@ -26,7 +26,9 @@ log = logging.getLogger("newsagent")
 def run(settings: Settings, llm: StructuredLLM) -> dict:
     day = datetime.now(timezone.utc).date()
     articles = collect(settings.lookback_hours, settings.max_articles_per_feed, settings.use_gdelt)
-    stories = cluster_articles(llm, articles, settings.max_stories, settings.min_outlets_per_story)
+    stories = cluster_articles(
+        llm, articles, settings.max_stories, settings.min_outlets_per_story, settings.stories_per_category
+    )
 
     analyzed: list[AnalyzedStory] = []
     for story in stories:

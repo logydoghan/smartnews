@@ -48,7 +48,7 @@ def to_records(day: date, items: list[AnalyzedStory]) -> dict:
                 "slug": slug,
                 "title": s.title,
                 "topic": s.topic,
-                "region": s.region,
+                "category": s.category,
                 "dek": a.dek,
                 "why_it_matters": s.why_it_matters,
                 "agree": a.agree,
@@ -102,11 +102,11 @@ def save_to_database(database_url: str, records: dict) -> None:
         )
         for s in records["stories"]:
             (story_id,) = conn.execute(
-                """insert into stories (briefing_date, rank, slug, title, topic, region, dek,
+                """insert into stories (briefing_date, rank, slug, title, topic, category, dek,
                        why_it_matters, agree, disagree, agreement_level, facts, image_url, image_alt)
                    values (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) returning id""",
                 (
-                    records["date"], s["rank"], s["slug"], s["title"], s["topic"], s["region"],
+                    records["date"], s["rank"], s["slug"], s["title"], s["topic"], s["category"],
                     s["dek"], s["why_it_matters"], s["agree"], s["disagree"],
                     s["agreement_level"], Jsonb(s["facts"]), s["image_url"], s["image_alt"],
                 ),

@@ -160,7 +160,7 @@ def image_type(data: bytes) -> str:
 def format_story(story: dict) -> str:
     return (
         f"Headline: {story['title']}\n"
-        f"Topic: {story['topic']} · Region: {story['region']}\n"
+        f"Section: {story['category']} · Topic: {story['topic']}\n"
         f"Summary: {story['dek']}"
     )
 

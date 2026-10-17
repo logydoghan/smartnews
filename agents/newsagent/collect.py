@@ -69,6 +69,7 @@ def parse_feed(feed: Feed, content: bytes, since: datetime, limit: int) -> list[
                 leaning=feed.leaning,
                 summary=clean_text(entry.get("summary", "")),
                 published_at=published,
+                section=feed.section,
             )
         )
     return articles

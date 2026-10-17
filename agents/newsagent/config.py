@@ -33,6 +33,7 @@ DEFAULT_ANGLES: tuple[Angle, ...] = (
 class Settings:
     model: str = "claude-sonnet-5-5"
     max_stories: int = 12
+    stories_per_category: int = 2
     min_outlets_per_story: int = 2
     lookback_hours: int = 24
     max_articles_per_feed: int = 40
@@ -52,6 +53,9 @@ class Settings:
         return cls(
             model=os.environ.get("NEWSAGENT_MODEL", cls.model),
             max_stories=int(os.environ.get("NEWSAGENT_MAX_STORIES", cls.max_stories)),
+            stories_per_category=int(
+                os.environ.get("NEWSAGENT_STORIES_PER_CATEGORY", cls.stories_per_category)
+            ),
             min_outlets_per_story=int(
                 os.environ.get("NEWSAGENT_MIN_OUTLETS", cls.min_outlets_per_story)
             ),

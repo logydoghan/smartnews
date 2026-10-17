@@ -27,7 +27,7 @@ def webp(n: int = 0) -> bytes:
 
 def records(*titles):
     return {"stories": [
-        {"slug": f"2026-10-17-story-{i}", "title": t, "topic": "Climate", "region": "Global",
+        {"slug": f"2026-10-17-story-{i}", "title": t, "topic": "Climate", "category": "Politics",
          "dek": "Something happened.", "image_url": None, "image_alt": None}
         for i, t in enumerate(titles)
     ]}

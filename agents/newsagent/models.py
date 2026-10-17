@@ -8,9 +8,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal, Optional, get_args
 
 from pydantic import BaseModel, Field
+
+
+# The site's sections, in the order the home page shows them.
+Category = Literal["Politics", "Finance", "Technology", "Health", "Entertainment", "Sports"]
+CATEGORIES: tuple[str, ...] = get_args(Category)
 
 
 @dataclass
@@ -22,6 +27,7 @@ class Article:
     leaning: Optional[str]
     summary: str
     published_at: Optional[datetime]
+    section: str = ""  # the feed's section, such as "Sports"; empty for general news
 
 
 # --- Clustering output -------------------------------------------------------
@@ -30,7 +36,7 @@ class Article:
 class StoryCluster(BaseModel):
     title: str = Field(description="Neutral headline for the event, under 90 characters.")
     topic: str = Field(description="One word or two, such as Economy, Climate, Conflict.")
-    region: Literal["Americas", "Europe", "Asia-Pacific", "Middle East", "Africa", "Global"]
+    category: Category = Field(description="The site section this story belongs in; pick the closest.")
     article_ids: list[int] = Field(description="Ids of every article covering this event.")
     why_it_matters: str = Field(description="One sentence on why this is a top story today.")
 
