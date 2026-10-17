@@ -1,8 +1,9 @@
 """Image agent: one AI illustration per story, saved to Supabase Storage.
 
 Claude writes a short scene description for each story, an image model draws it in the
-site's house style, and the result is stored as WebP in a public bucket. Illustrations are
-deliberately not photo-like, so no one mistakes them for pictures of the real event.
+site's house style, Claude looks at the result to catch text, photo-like images and real
+faces, and the image is stored as WebP in a public bucket. Illustrations are deliberately
+not photo-like, so no one mistakes them for pictures of the real event.
 """
 
 from __future__ import annotations
@@ -22,6 +23,7 @@ log = logging.getLogger(__name__)
 BUCKET = "story-images"
 WIDTH = 1536  # pixels; images are 3:2 landscape
 WEBP_QUALITY = 80
+ATTEMPTS = 2  # a rejected image is redrawn once before the story goes without one
 
 # Added to every scene so the front page reads as one set.
 HOUSE_STYLE = (
@@ -44,9 +46,34 @@ calm symbols such as an empty table, a damaged bridge, a dove or a map outline.
 - Keep the scene under 60 words."""
 
 
+CHECK_SYSTEM = """You check illustrations before they appear on a news website. Look at the \
+whole image closely, including small details and backgrounds, and answer honestly."""
+
+CHECK_PROMPT = "Does this illustration break any of the site's rules?"
+
+
 class ImageBrief(BaseModel):
     scene: str = Field(description="What to draw, under 60 words, without style words.")
     alt: str = Field(description="One sentence describing the illustration for screen readers.")
+
+
+class ImageCheck(BaseModel):
+    has_text: bool = Field(
+        description="True if any letters, words, numbers, logos or watermarks appear, even garbled."
+    )
+    looks_like_photo: bool = Field(description="True if a reader could mistake it for a photograph.")
+    shows_real_person: bool = Field(
+        description="True if it shows a recognizable real person or a detailed realistic face."
+    )
+    problem: str = Field(description="What to avoid when redrawing, in a few words; empty if none.")
+
+    @property
+    def ok(self) -> bool:
+        return not (self.has_text or self.looks_like_photo or self.shows_real_person)
+
+
+class ImageRejected(RuntimeError):
+    pass
 
 
 class ImageGenerator(Protocol):
@@ -78,7 +105,7 @@ class SupabaseStorage:
                 **self.headers,
                 "Content-Type": content_type,
                 # Names include a content hash, so a file never changes once uploaded.
-                "Cache-Control": "max-age=31536000, immutable",
+                "Cache-Control": "max-age=31536000",
                 "x-upsert": "true",
             },
         )
@@ -107,7 +134,16 @@ def format_story(story: dict) -> str:
 
 def illustrate(story: dict, llm: StructuredLLM, generator: ImageGenerator, store: ImageStore) -> None:
     brief = llm.ask(SYSTEM, format_story(story), ImageBrief)
-    data = to_webp(generator.generate(f"{brief.scene}\n\n{HOUSE_STYLE}"))
+    prompt = f"{brief.scene}\n\n{HOUSE_STYLE}"
+    for attempt in range(1, ATTEMPTS + 1):
+        data = to_webp(generator.generate(prompt))
+        check = llm.ask(CHECK_SYSTEM, CHECK_PROMPT, ImageCheck, image=data)
+        if check.ok:
+            break
+        log.warning("Redrawing image for %r (attempt %d): %s", story["title"], attempt, check.problem)
+        prompt = f"{brief.scene}\n\nAvoid: {check.problem}\n\n{HOUSE_STYLE}"
+    else:
+        raise ImageRejected(f"every attempt failed the check, last: {check.problem}")
     name = f"{story['slug']}-{hashlib.sha256(data).hexdigest()[:10]}.webp"
     story["image_url"] = store.save(name, data, "image/webp")
     story["image_alt"] = brief.alt
@@ -124,3 +160,8 @@ def add_images(records: dict, llm: StructuredLLM, generator: ImageGenerator, sto
             # Images are a bonus: a story without one is still published.
             log.exception("No image for %r", story["title"])
     return made
+
+
+def make_generator(settings) -> ImageGenerator | None:
+    """The configured image service, or None when its key is not set."""
+    return None  # Placeholder until an image service is chosen.

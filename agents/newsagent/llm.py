@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import base64
 import logging
 from typing import Protocol, TypeVar
 
@@ -18,7 +19,9 @@ class LLMError(RuntimeError):
 
 
 class StructuredLLM(Protocol):
-    def ask(self, system: str, prompt: str, schema: type[T]) -> T: ...
+    def ask(self, system: str, prompt: str, schema: type[T], image: bytes | None = None) -> T:
+        """Answer in the schema's shape; `image` (WebP bytes) is shown before the prompt."""
+        ...
 
 
 class ClaudeLLM:
@@ -26,13 +29,26 @@ class ClaudeLLM:
         self.model = model
         self.client = client or anthropic.Anthropic()
 
-    def ask(self, system: str, prompt: str, schema: type[T]) -> T:
+    def ask(self, system: str, prompt: str, schema: type[T], image: bytes | None = None) -> T:
+        content: str | list[dict] = prompt
+        if image is not None:
+            content = [
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": "image/webp",
+                        "data": base64.b64encode(image).decode(),
+                    },
+                },
+                {"type": "text", "text": prompt},
+            ]
         try:
             response = self.client.beta.messages.create(
                 model=self.model,
                 max_tokens=16000,
                 system=system,
-                messages=[{"role": "user", "content": prompt}],
+                messages=[{"role": "user", "content": content}],
                 output_config={
                     "format": {
                         "type": "json_schema",

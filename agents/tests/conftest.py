@@ -13,9 +13,11 @@ class FakeLLM:
     def __init__(self, *responses):
         self.responses = list(responses)
         self.calls: list[tuple[str, str, type]] = []
+        self.images: list[bytes | None] = []
 
-    def ask(self, system, prompt, schema):
+    def ask(self, system, prompt, schema, image=None):
         self.calls.append((system, prompt, schema))
+        self.images.append(image)
         return self.responses.pop(0)
 
 

@@ -49,3 +49,14 @@ def test_ask_raises_on_truncation():
     llm = ClaudeLLM("m", fake_client([], text='{"stories": [', stop_reason="max_tokens"))
     with pytest.raises(LLMError):
         llm.ask("s", "p", ClusterResult)
+
+
+def test_ask_sends_an_image_before_the_prompt():
+    captured = []
+    llm = ClaudeLLM("m", fake_client(captured, text=VALID))
+    llm.ask("s", "Check this image.", ClusterResult, image=b"webp-bytes")
+
+    image, text = json.loads(captured[0].content)["messages"][0]["content"]
+    assert image["type"] == "image"
+    assert image["source"] == {"type": "base64", "media_type": "image/webp", "data": "d2VicC1ieXRlcw=="}
+    assert text == {"type": "text", "text": "Check this image."}
