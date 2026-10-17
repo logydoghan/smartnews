@@ -39,8 +39,11 @@ class Settings:
     use_gdelt: bool = True
     database_url: str | None = None
     angles: tuple[Angle, ...] = field(default=DEFAULT_ANGLES)
-    # Image agent: runs when the image service key and Supabase Storage settings are set.
+    # Image agent: runs when the Recraft key and Supabase Storage settings are set.
     images: bool = True
+    image_model: str = "recraftv4_1"
+    recraft_api_key: str | None = None
+    recraft_style_id: str | None = None
     supabase_url: str | None = None
     supabase_secret_key: str | None = None
 
@@ -56,6 +59,9 @@ class Settings:
             use_gdelt=os.environ.get("NEWSAGENT_USE_GDELT", "1") != "0",
             database_url=os.environ.get("DATABASE_URL") or None,
             images=os.environ.get("NEWSAGENT_IMAGES", "1") != "0",
+            image_model=os.environ.get("NEWSAGENT_IMAGE_MODEL", cls.image_model),
+            recraft_api_key=os.environ.get("RECRAFT_API_KEY") or None,
+            recraft_style_id=os.environ.get("RECRAFT_STYLE_ID") or None,
             supabase_url=os.environ.get("SUPABASE_URL") or None,
             supabase_secret_key=os.environ.get("SUPABASE_SECRET_KEY") or None,
         )

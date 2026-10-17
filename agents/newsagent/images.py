@@ -1,28 +1,28 @@
 """Image agent: one AI illustration per story, saved to Supabase Storage.
 
-Claude writes a short scene description for each story, an image model draws it in the
-site's house style, Claude looks at the result to catch text, photo-like images and real
-faces, and the image is stored as WebP in a public bucket. Illustrations are deliberately
-not photo-like, so no one mistakes them for pictures of the real event.
+Claude writes a short scene description for each story, Recraft draws it in the site's
+house style, Claude looks at the result to catch text, photo-like images and real faces, and
+the file goes to a public bucket exactly as Recraft made it (its provenance metadata must not
+be stripped). Illustrations are deliberately not photo-like, so no one mistakes them for
+pictures of the real event.
 """
 
 from __future__ import annotations
 
 import hashlib
-import io
 import logging
 from typing import Protocol
 
 import httpx
 from pydantic import BaseModel, Field
 
+from .config import Settings
 from .llm import StructuredLLM
 
 log = logging.getLogger(__name__)
 
 BUCKET = "story-images"
-WIDTH = 1536  # pixels; images are 3:2 landscape
-WEBP_QUALITY = 80
+RECRAFT_URL = "https://external.api.recraft.ai/v1/images/generations"
 ATTEMPTS = 2  # a rejected image is redrawn once before the story goes without one
 
 # Added to every scene so the front page reads as one set.
@@ -78,8 +78,36 @@ class ImageRejected(RuntimeError):
 
 class ImageGenerator(Protocol):
     def generate(self, prompt: str) -> bytes:
-        """Return one landscape image (PNG, JPEG or WebP bytes) for the prompt."""
+        """Return one 3:2 landscape image (WebP, PNG or JPEG bytes) for the prompt."""
         ...
+
+
+class RecraftGenerator:
+    """Recraft's illustration models. The image comes back as a link that lasts about a day."""
+
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "recraftv4_1",
+        style_id: str | None = None,
+        client: httpx.Client | None = None,
+    ):
+        self.api_key = api_key
+        self.model = model
+        self.style_id = style_id
+        self.client = client or httpx.Client(timeout=180)
+
+    def generate(self, prompt: str) -> bytes:
+        body = {"prompt": prompt, "model": self.model, "size": "3:2"}
+        if self.style_id:
+            body["style_id"] = self.style_id
+        response = self.client.post(
+            RECRAFT_URL, json=body, headers={"Authorization": f"Bearer {self.api_key}"}
+        )
+        response.raise_for_status()
+        image = self.client.get(response.json()["data"][0]["url"])
+        image.raise_for_status()
+        return image.content
 
 
 class ImageStore(Protocol):
@@ -113,15 +141,18 @@ class SupabaseStorage:
         return f"{self.base}/storage/v1/object/public/{self.bucket}/{name}"
 
 
-def to_webp(data: bytes, width: int = WIDTH) -> bytes:
-    """Re-encode any image as a 3:2 WebP of the given width, cropping from the centre."""
-    from PIL import Image, ImageOps
+IMAGE_TYPES = {"image/webp": "webp", "image/png": "png", "image/jpeg": "jpg"}
 
-    with Image.open(io.BytesIO(data)) as img:
-        out = ImageOps.fit(img.convert("RGB"), (width, width * 2 // 3), Image.Resampling.LANCZOS)
-    buf = io.BytesIO()
-    out.save(buf, "WEBP", quality=WEBP_QUALITY, method=6)
-    return buf.getvalue()
+
+def image_type(data: bytes) -> str:
+    """The MIME type of WebP, PNG or JPEG bytes, from their first few bytes."""
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    raise ImageRejected("the image service returned a file that is not WebP, PNG or JPEG")
 
 
 def format_story(story: dict) -> str:
@@ -136,16 +167,17 @@ def illustrate(story: dict, llm: StructuredLLM, generator: ImageGenerator, store
     brief = llm.ask(SYSTEM, format_story(story), ImageBrief)
     prompt = f"{brief.scene}\n\n{HOUSE_STYLE}"
     for attempt in range(1, ATTEMPTS + 1):
-        data = to_webp(generator.generate(prompt))
-        check = llm.ask(CHECK_SYSTEM, CHECK_PROMPT, ImageCheck, image=data)
+        data = generator.generate(prompt)
+        content_type = image_type(data)
+        check = llm.ask(CHECK_SYSTEM, CHECK_PROMPT, ImageCheck, image=data, image_type=content_type)
         if check.ok:
             break
         log.warning("Redrawing image for %r (attempt %d): %s", story["title"], attempt, check.problem)
         prompt = f"{brief.scene}\n\nAvoid: {check.problem}\n\n{HOUSE_STYLE}"
     else:
         raise ImageRejected(f"every attempt failed the check, last: {check.problem}")
-    name = f"{story['slug']}-{hashlib.sha256(data).hexdigest()[:10]}.webp"
-    story["image_url"] = store.save(name, data, "image/webp")
+    name = f"{story['slug']}-{hashlib.sha256(data).hexdigest()[:10]}.{IMAGE_TYPES[content_type]}"
+    story["image_url"] = store.save(name, data, content_type)
     story["image_alt"] = brief.alt
 
 
@@ -162,6 +194,8 @@ def add_images(records: dict, llm: StructuredLLM, generator: ImageGenerator, sto
     return made
 
 
-def make_generator(settings) -> ImageGenerator | None:
+def make_generator(settings: Settings) -> ImageGenerator | None:
     """The configured image service, or None when its key is not set."""
-    return None  # Placeholder until an image service is chosen.
+    if not settings.recraft_api_key:
+        return None
+    return RecraftGenerator(settings.recraft_api_key, settings.image_model, settings.recraft_style_id)

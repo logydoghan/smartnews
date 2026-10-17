@@ -55,8 +55,10 @@ def test_ask_sends_an_image_before_the_prompt():
     captured = []
     llm = ClaudeLLM("m", fake_client(captured, text=VALID))
     llm.ask("s", "Check this image.", ClusterResult, image=b"webp-bytes")
+    llm.ask("s", "And this one.", ClusterResult, image=b"png", image_type="image/png")
 
     image, text = json.loads(captured[0].content)["messages"][0]["content"]
     assert image["type"] == "image"
     assert image["source"] == {"type": "base64", "media_type": "image/webp", "data": "d2VicC1ieXRlcw=="}
     assert text == {"type": "text", "text": "Check this image."}
+    assert json.loads(captured[1].content)["messages"][0]["content"][0]["source"]["media_type"] == "image/png"

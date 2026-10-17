@@ -19,8 +19,15 @@ class LLMError(RuntimeError):
 
 
 class StructuredLLM(Protocol):
-    def ask(self, system: str, prompt: str, schema: type[T], image: bytes | None = None) -> T:
-        """Answer in the schema's shape; `image` (WebP bytes) is shown before the prompt."""
+    def ask(
+        self,
+        system: str,
+        prompt: str,
+        schema: type[T],
+        image: bytes | None = None,
+        image_type: str = "image/webp",
+    ) -> T:
+        """Answer in the schema's shape; an `image` is shown to Claude before the prompt."""
         ...
 
 
@@ -29,7 +36,14 @@ class ClaudeLLM:
         self.model = model
         self.client = client or anthropic.Anthropic()
 
-    def ask(self, system: str, prompt: str, schema: type[T], image: bytes | None = None) -> T:
+    def ask(
+        self,
+        system: str,
+        prompt: str,
+        schema: type[T],
+        image: bytes | None = None,
+        image_type: str = "image/webp",
+    ) -> T:
         content: str | list[dict] = prompt
         if image is not None:
             content = [
@@ -37,7 +51,7 @@ class ClaudeLLM:
                     "type": "image",
                     "source": {
                         "type": "base64",
-                        "media_type": "image/webp",
+                        "media_type": image_type,
                         "data": base64.b64encode(image).decode(),
                     },
                 },

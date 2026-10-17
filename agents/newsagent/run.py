@@ -65,7 +65,7 @@ def main(argv: list[str] | None = None) -> int:
         made = add_images(records, llm, generator, store)
         log.info("Illustrated %d of %d stories", made, len(records["stories"]))
     elif settings.images:
-        log.warning("Skipping images: set the image service key, SUPABASE_URL and SUPABASE_SECRET_KEY")
+        log.warning("Skipping images: set RECRAFT_API_KEY, SUPABASE_URL and SUPABASE_SECRET_KEY")
 
     if args.json:
         write_json(args.json, records)

@@ -101,7 +101,7 @@ function LeadStory({ story }: { story: Story }) {
           Compare {plural(story.angles.length, "angle")}
         </Link>
       </div>
-      <div className="flex flex-col gap-3.5 rounded-xl bg-soft p-7">
+      <div className="flex flex-col gap-3.5 self-start rounded-xl bg-soft p-7">
         <div className="text-[13px] font-semibold uppercase tracking-wider text-muted">How the angles differ</div>
         {story.angles.slice(0, 3).map((a) => (
           <div key={a.key} className="flex flex-col gap-1">

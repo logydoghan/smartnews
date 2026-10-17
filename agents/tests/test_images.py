@@ -1,25 +1,28 @@
-import io
+import json
 
 import httpx
 import pytest
-from PIL import Image
 
+from newsagent.config import Settings
 from newsagent.images import (
     HOUSE_STYLE,
     ImageBrief,
     ImageCheck,
+    ImageRejected,
+    RecraftGenerator,
     SupabaseStorage,
     add_images,
-    to_webp,
+    image_type,
+    make_generator,
 )
 
 from .conftest import FakeLLM
 
+PNG = b"\x89PNG\r\n\x1a\n" + b"\x00" * 16
 
-def png(width=1024, height=1024, color=(30, 47, 74)) -> bytes:
-    buf = io.BytesIO()
-    Image.new("RGB", (width, height), color).save(buf, "PNG")
-    return buf.getvalue()
+
+def webp(n: int = 0) -> bytes:
+    return b"RIFF\x00\x00\x00\x00WEBPVP8 " + bytes([n]) * 16
 
 
 def records(*titles):
@@ -52,10 +55,12 @@ class FakeStore:
         return f"https://cdn.example/{name}"
 
 
-def test_to_webp_crops_to_three_by_two():
-    out = Image.open(io.BytesIO(to_webp(png(1024, 1024), width=600)))
-    assert out.format == "WEBP"
-    assert out.size == (600, 400)
+def test_image_type_reads_magic_bytes():
+    assert image_type(webp()) == "image/webp"
+    assert image_type(PNG) == "image/png"
+    assert image_type(b"\xff\xd8\xff\xe0rest") == "image/jpeg"
+    with pytest.raises(ImageRejected):
+        image_type(b"<html>error</html>")
 
 
 OK = ImageCheck(has_text=False, looks_like_photo=False, shows_real_person=False, problem="")
@@ -70,7 +75,7 @@ def test_add_images_fills_each_story_and_keeps_going_after_a_failure():
         ImageBrief(scene="A dove over a table.", alt="A dove."),
         ImageBrief(scene="A factory.", alt="A factory."), OK,
     )
-    generator = FakeGenerator(png(), RuntimeError("model refused"), png(1536, 1024))
+    generator = FakeGenerator(webp(1), RuntimeError("model refused"), PNG)
     store = FakeStore()
 
     assert add_images(data, llm, generator, store) == 2
@@ -80,8 +85,10 @@ def test_add_images_fills_each_story_and_keeps_going_after_a_failure():
     assert first["image_url"].endswith(".webp")
     assert first["image_alt"] == "A bottle on waves."
     assert failed["image_url"] is None and failed["image_alt"] is None
+    assert third["image_url"].endswith(".png")
     assert third["image_alt"] == "A factory."
-    assert {ct for _, ct in store.saved.values()} == {"image/webp"}
+    # Files are stored exactly as the image service made them.
+    assert sorted(store.saved.values()) == sorted([(webp(1), "image/webp"), (PNG, "image/png")])
     # The scene comes from Claude, the style is always appended.
     assert generator.prompts[0] == f"Waves and a bottle.\n\n{HOUSE_STYLE}"
     assert "Headline: Treaty signed" in llm.calls[0][1]
@@ -96,7 +103,7 @@ def test_rejected_image_is_redrawn_once_then_dropped():
         ImageBrief(scene="A sign.", alt="A sign."), HAS_TEXT, OK,
         ImageBrief(scene="A poster.", alt="A poster."), HAS_TEXT, HAS_TEXT,
     )
-    generator = FakeGenerator(png(), png(), png(), png())
+    generator = FakeGenerator(webp(1), webp(2), webp(3), webp(4))
     store = FakeStore()
 
     assert add_images(data, llm, generator, store) == 1
@@ -136,3 +143,39 @@ def test_supabase_storage_raises_on_error():
     )
     with pytest.raises(httpx.HTTPStatusError):
         store.save("a.webp", b"img", "image/webp")
+
+
+def test_recraft_generator_requests_a_landscape_image_and_downloads_it():
+    requests = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        if request.url.host == "external.api.recraft.ai":
+            return httpx.Response(200, json={"data": [{"url": "https://img.recraft.ai/abc.webp"}]})
+        return httpx.Response(200, content=webp(7))
+
+    generator = RecraftGenerator("rk", style_id="style-1",
+                                 client=httpx.Client(transport=httpx.MockTransport(handler)))
+
+    assert generator.generate("A dove.") == webp(7)
+    create, download = requests
+    assert create.headers["authorization"] == "Bearer rk"
+    assert json.loads(create.content) == {
+        "prompt": "A dove.", "model": "recraftv4_1", "size": "3:2", "style_id": "style-1",
+    }
+    assert str(download.url) == "https://img.recraft.ai/abc.webp"
+
+
+def test_recraft_generator_raises_on_api_error():
+    generator = RecraftGenerator(
+        "rk", client=httpx.Client(transport=httpx.MockTransport(lambda r: httpx.Response(402)))
+    )
+    with pytest.raises(httpx.HTTPStatusError):
+        generator.generate("A dove.")
+
+
+def test_make_generator_needs_a_recraft_key():
+    assert make_generator(Settings()) is None
+    generator = make_generator(Settings(recraft_api_key="rk", image_model="recraftv4_1_flash"))
+    assert isinstance(generator, RecraftGenerator)
+    assert generator.model == "recraftv4_1_flash"

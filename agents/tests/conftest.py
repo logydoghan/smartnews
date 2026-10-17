@@ -15,7 +15,7 @@ class FakeLLM:
         self.calls: list[tuple[str, str, type]] = []
         self.images: list[bytes | None] = []
 
-    def ask(self, system, prompt, schema, image=None):
+    def ask(self, system, prompt, schema, image=None, image_type="image/webp"):
         self.calls.append((system, prompt, schema))
         self.images.append(image)
         return self.responses.pop(0)
