@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { AccountNav } from "@/components/AccountNav";
 
 export function SiteHeader({ children }: { children?: React.ReactNode }) {
   return (
@@ -7,7 +9,13 @@ export function SiteHeader({ children }: { children?: React.ReactNode }) {
         <Link href="/" className="font-serif text-[30px] font-bold tracking-tight text-ink">
           SmartNews
         </Link>
-        {children}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+          {children}
+          {/* The account links depend on the session, so they stream in after the page. */}
+          <Suspense fallback={null}>
+            <AccountNav />
+          </Suspense>
+        </div>
       </div>
     </header>
   );

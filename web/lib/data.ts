@@ -10,18 +10,18 @@ function supabase(): SupabaseClient | null {
   return url && key ? createClient(url, key, { auth: { persistSession: false } }) : null;
 }
 
-type StoryRow = Omit<Story, "sources" | "angles"> & {
+export type StoryRow = Omit<Story, "sources" | "angles"> & {
   story_sources: Source[];
   angles: Angle[];
 };
 
-const STORY_COLUMNS =
+export const STORY_COLUMNS =
   "briefing_date, rank, slug, title, topic, category, dek, why_it_matters, agree, disagree, agreement_level, facts, " +
   "image_url, image_alt, " +
   "story_sources (ref, url, title, outlet, country, leaning, published_at), " +
   "angles (position, key, label, stance, body, refs)";
 
-function toStory({ story_sources, angles, ...rest }: StoryRow): Story {
+export function toStory({ story_sources, angles, ...rest }: StoryRow): Story {
   return {
     ...rest,
     sources: [...story_sources].sort((a, b) => a.ref - b.ref),
