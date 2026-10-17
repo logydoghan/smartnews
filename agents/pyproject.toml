@@ -1,0 +1,28 @@
+[project]
+name = "newsagent"
+version = "0.1.0"
+description = "Morning news collection and multi-angle analysis agents for SmartNews"
+requires-python = ">=3.11"
+dependencies = [
+    "anthropic>=1.15",
+    "feedparser>=6.0",
+    "httpx>=0.28",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.9",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+newsagent = "newsagent.run:main"
+
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["newsagent*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
