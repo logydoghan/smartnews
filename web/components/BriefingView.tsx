@@ -3,37 +3,40 @@
 import Link from "next/link";
 import { useState } from "react";
 import { StoryImage } from "@/components/StoryImage";
-import { plural } from "@/lib/format";
-import { REGIONS, type Story } from "@/lib/types";
+import { plural, sectionLabel } from "@/lib/format";
+import { CATEGORIES, type Category, type Story } from "@/lib/types";
 
 const chip = "rounded-full px-3.5 py-2.5 text-sm";
 
 export function BriefingView({ stories }: { stories: Story[] }) {
-  const [region, setRegion] = useState<string | null>(null);
-  const regions = REGIONS.filter((r) => stories.some((s) => s.region === r));
-  const shown = region ? stories.filter((s) => s.region === region) : stories;
+  const [category, setCategory] = useState<Category | null>(null);
+  const shown = category ? stories.filter((s) => s.category === category) : stories;
   const [lead, ...rest] = shown;
 
   return (
     <>
-      <nav aria-label="Regions" className="flex flex-wrap gap-1 pb-6">
-        {[null, ...regions].map((r) => {
-          const active = r === region;
+      <nav aria-label="Sections" className="flex flex-wrap gap-1 pb-6">
+        {[null, ...CATEGORIES].map((c) => {
+          const active = c === category;
           return (
             <button
-              key={r ?? "all"}
+              key={c ?? "all"}
               type="button"
               aria-pressed={active}
-              onClick={() => setRegion(r)}
+              onClick={() => setCategory(c)}
               className={`${chip} ${active ? "bg-ink font-medium text-white" : "text-muted hover:bg-soft hover:text-ink"}`}
             >
-              {r ?? "All world"}
+              {c ?? "All"}
             </button>
           );
         })}
       </nav>
 
-      {lead ? <LeadStory story={lead} /> : <p className="py-10 text-muted">No stories from this region today.</p>}
+      {lead ? (
+        <LeadStory story={lead} />
+      ) : (
+        <p className="py-10 text-muted">No {category} stories in today&apos;s briefing.</p>
+      )}
 
       {rest.length > 0 && (
         <section aria-label="More stories" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 pt-8">
@@ -51,7 +54,7 @@ export function BriefingView({ stories }: { stories: Story[] }) {
                   className="mb-1.5"
                 />
               )}
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{s.topic}</div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{sectionLabel(s)}</div>
               <div className="font-serif text-[23px] font-semibold leading-tight group-hover:text-accent">{s.title}</div>
               <p className="text-[15px] leading-normal text-body">{s.dek}</p>
               <div className="text-[13px] text-muted">
@@ -80,7 +83,7 @@ function LeadStory({ story }: { story: Story }) {
             />
           </Link>
         )}
-        <div className="text-[13px] font-semibold uppercase tracking-wider text-muted">Top story · {story.topic}</div>
+        <div className="text-[13px] font-semibold uppercase tracking-wider text-muted">Top story · {sectionLabel(story)}</div>
         <h2 className="font-serif text-[40px] leading-[1.12] font-bold tracking-tight">
           <Link href={href} className="hover:text-accent">
             {story.title}

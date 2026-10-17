@@ -7,7 +7,7 @@ import { LeanBar } from "@/components/LeanBar";
 import { StoryImage } from "@/components/StoryImage";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 import { getLatestBriefing, getStory } from "@/lib/data";
-import { formatBriefingDate, plural } from "@/lib/format";
+import { formatBriefingDate, plural, sectionLabel } from "@/lib/format";
 
 // Before the first briefing exists there are no stories, but Cache Components needs at
 // least one param to build. The placeholder renders as a 404; real stories render on request.
@@ -51,7 +51,7 @@ async function StoryContent({ params }: Pick<PageProps<"/story/[slug]">, "params
     <div className="flex flex-col gap-12">
       <section className="flex max-w-[820px] flex-col gap-4">
         <div className="text-[13px] font-semibold uppercase tracking-wider text-muted">
-          {story.topic} · {formatBriefingDate(story.briefing_date)}
+          {sectionLabel(story)} · {formatBriefingDate(story.briefing_date)}
         </div>
         <h1 className="font-serif text-[34px] leading-[1.1] font-bold tracking-tight md:text-5xl">{story.title}</h1>
         <p className="text-lg leading-relaxed text-body">{story.dek}</p>

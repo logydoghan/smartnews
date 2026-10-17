@@ -1,4 +1,4 @@
-import type { Briefing, Source, Story } from "./types";
+import type { Briefing, Category, Source, Story } from "./types";
 
 // Shown when no database is configured, so the site can be developed and previewed
 // before the agents have run. Stories and outlets here are made up.
@@ -21,7 +21,7 @@ const plastic: Story = {
   slug: "sample-plastic-treaty",
   title: "Coastal nations sign a treaty to cut ocean plastic by half",
   topic: "Climate",
-  region: "Global",
+  category: "Politics",
   dek: "Forty-one countries agreed on binding limits for single-use plastic exports. Supporters call it a turning point; critics say enforcement is left to each country.",
   why_it_matters: "Plastic waste reaches every coastline, and this is the largest deal of its kind.",
   agree: "The deal is the largest of its kind, and the 2028 export ban is its strongest part.",
@@ -57,7 +57,7 @@ function brief(
   slug: string,
   title: string,
   topic: string,
-  region: string,
+  category: Category,
   dek: string,
   level: Story["agreement_level"],
   imageAlt: string,
@@ -68,7 +68,7 @@ function brief(
     slug,
     title,
     topic,
-    region,
+    category,
     dek,
     why_it_matters: dek,
     agree: "The basic facts of the event are not disputed.",
@@ -97,10 +97,12 @@ export const SAMPLE_BRIEFING: Briefing = {
   sample: true,
   stories: [
     plastic,
-    brief(2, "sample-rates", "Central bank raises rates a quarter point", "Economy", "Americas", "Markets expected the move. The debate is over what it means for mortgages and jobs.", "views split", "A small house beside a staircase of bars that climbs upward."),
-    brief(3, "sample-ai-ads", "New rules require labels on AI-made political ads", "Technology", "Europe", "Regulators say voters deserve to know. Platforms warn the rules are hard to enforce.", "broad agreement", "A ballot box beside a phone screen marked with a large tag."),
-    brief(4, "sample-vaccine-plant", "Regional vaccine plant opens after two-year delay", "Health", "Africa", "The plant will supply three neighbouring countries. Cost and ownership are disputed.", "mixed", "A factory building with a row of vaccine vials in front of it."),
-    brief(5, "sample-ceasefire", "Ceasefire talks resume with a new mediator", "Conflict", "Middle East", "Both sides sent delegations. Neighbouring governments describe the stakes very differently.", "views split", "A dove flying above a long table with an empty chair at each end."),
-    brief(6, "sample-solar", "Grid operator plans record solar build-out", "Energy", "Asia-Pacific", "Supporters cite cheaper power. Rural communities worry about land use.", "mixed", "Rows of solar panels across rolling hills under a large sun."),
+    brief(2, "sample-rates", "Central bank raises rates a quarter point", "Interest rates", "Finance", "Markets expected the move. The debate is over what it means for mortgages and jobs.", "views split", "A small house beside a staircase of bars that climbs upward."),
+    brief(3, "sample-ai-ads", "New rules require labels on AI-made political ads", "AI", "Technology", "Regulators say voters deserve to know. Platforms warn the rules are hard to enforce.", "broad agreement", "A ballot box beside a phone screen marked with a large tag."),
+    brief(4, "sample-vaccine-plant", "Regional vaccine plant opens after two-year delay", "Vaccines", "Health", "The plant will supply three neighbouring countries. Cost and ownership are disputed.", "mixed", "A factory building with a row of vaccine vials in front of it."),
+    brief(5, "sample-ceasefire", "Ceasefire talks resume with a new mediator", "Diplomacy", "Politics", "Both sides sent delegations. Neighbouring governments describe the stakes very differently.", "views split", "A dove flying above a long table with an empty chair at each end."),
+    brief(6, "sample-solar", "Grid operator plans record solar build-out", "Energy", "Finance", "Supporters cite cheaper power. Rural communities worry about land use.", "mixed", "Rows of solar panels across rolling hills under a large sun."),
+    brief(7, "sample-film-festival", "Film festival opens with a record number of first-time directors", "Film", "Entertainment", "Organisers call it a turning point for new voices. Distributors question how many of the films will reach cinemas.", "mixed", "A glowing cinema screen with a film reel and rows of empty seats."),
+    brief(8, "sample-games-host", "City chosen to host the 2036 Summer Games", "Olympics", "Sports", "Supporters expect investment and tourism. Critics point to the cost overruns of past hosts.", "views split", "A stadium on a city skyline with a lit torch and fireworks above it."),
   ],
 };
