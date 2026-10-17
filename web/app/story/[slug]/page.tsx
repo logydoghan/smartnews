@@ -8,9 +8,14 @@ import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 import { getLatestBriefing, getStory } from "@/lib/data";
 import { formatBriefingDate, plural } from "@/lib/format";
 
+// Before the first briefing exists there are no stories, but Cache Components needs at
+// least one param to build. The placeholder renders as a 404; real stories render on request.
+const NO_STORIES_YET = "no-stories-yet";
+
 export async function generateStaticParams() {
   const briefing = await getLatestBriefing();
-  return (briefing?.stories ?? []).map((s) => ({ slug: s.slug }));
+  const params = (briefing?.stories ?? []).map((s) => ({ slug: s.slug }));
+  return params.length > 0 ? params : [{ slug: NO_STORIES_YET }];
 }
 
 export async function generateMetadata({ params }: PageProps<"/story/[slug]">): Promise<Metadata> {

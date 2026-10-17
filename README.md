@@ -21,7 +21,7 @@ Both halves share one Supabase Postgres database. The agents write with the data
 1. **Database.** Create a Supabase project and run `supabase/migrations/0001_init.sql` in its SQL editor (or with `supabase db push`).
 2. **Agents.** In the GitHub repository, add two Actions secrets:
    - `ANTHROPIC_API_KEY`: a Claude API key.
-   - `DATABASE_URL`: the Supabase Postgres connection string.
+   - `DATABASE_URL`: the Supabase connection string from the dashboard's **Connect** dialog. Use the **Session pooler** URI (`...pooler.supabase.com:5432/postgres`), not the Direct connection: GitHub Actions has no IPv6, and the direct host is IPv6-only.
 
    The **Morning briefing** workflow then runs every day at 06:00 UTC. Run it by hand from the Actions tab to publish the first briefing.
 3. **Website.** Import the repository into Vercel with `web` as the root directory, and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. Without them the site shows built-in sample stories.
@@ -29,7 +29,7 @@ Both halves share one Supabase Postgres database. The agents write with the data
 ## Running locally
 
 ```bash
-# Agents
+# Agents (from the repository root)
 cd agents
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
@@ -37,7 +37,7 @@ pytest
 export ANTHROPIC_API_KEY=...
 newsagent --no-db --json briefing.json   # dry run: writes JSON, skips the database
 
-# Website
+# Website (from the repository root)
 cd web
 npm install
 npm run dev                               # http://localhost:3000, sample stories unless .env.local is set

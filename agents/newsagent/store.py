@@ -33,12 +33,19 @@ def to_records(day: date, items: list[AnalyzedStory]) -> dict:
     """The briefing as plain data, shaped like the database tables."""
     outlets = {a.outlet for item in items for a in item.story.articles}
     stories = []
+    used_slugs: set[str] = set()
     for rank, item in enumerate(items, start=1):
         s, a = item.story, item.analysis
+        # Slugs are unique in the database; titles can repeat or share a long prefix.
+        base = slug = story_slug(day, s.title)
+        n = 2
+        while slug in used_slugs:
+            slug, n = f"{base}-{n}", n + 1
+        used_slugs.add(slug)
         stories.append(
             {
                 "rank": rank,
-                "slug": story_slug(day, s.title),
+                "slug": slug,
                 "title": s.title,
                 "topic": s.topic,
                 "region": s.region,
@@ -83,7 +90,8 @@ def save_to_database(database_url: str, records: dict) -> None:
     import psycopg
     from psycopg.types.json import Jsonb
 
-    with psycopg.connect(database_url) as conn, conn.transaction():
+    # prepare_threshold=None keeps this working through Supabase's transaction pooler too.
+    with psycopg.connect(database_url, prepare_threshold=None) as conn, conn.transaction():
         conn.execute("delete from briefings where date = %s", (records["date"],))
         conn.execute(
             "insert into briefings (date, article_count, outlet_count) values (%s, %s, %s)",

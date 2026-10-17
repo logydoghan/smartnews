@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
-from newsagent.collect import clean_text, dedupe, normalize_url, parse_feed, parse_gdelt
+import httpx
+
+from newsagent.collect import clean_text, collect, dedupe, normalize_url, parse_feed, parse_gdelt
 from newsagent.sources import Feed
 
 FEED = Feed("Example", "https://example.com/rss", "Testland", "center")
@@ -50,3 +52,40 @@ def test_dedupe_by_url_and_title(articles):
 def test_clean_text_truncates_on_word_boundary():
     assert clean_text("one two three four", limit=10) == "one two…"
     assert normalize_url("HTTPS://Example.COM/a/?q=1#x") == "https://example.com/a"
+
+
+BAD_FEED = b"""<?xml version="1.0"?>
+<rss version="2.0"><channel>
+  <item><title>Zero date</title><link>https://example.com/zero</link><pubDate>0000-00-00 00:00:00</pubDate></item>
+  <item><title>Broken link</title><link>http://[bad</link></item>
+  <item><title>Fine</title><link>https://example.com/fine</link></item>
+</channel></rss>"""
+
+
+def test_parse_feed_survives_bad_dates_and_links():
+    since = datetime(2026, 1, 1, tzinfo=timezone.utc)
+    articles = parse_feed(FEED, BAD_FEED, since, limit=10)
+    assert [(a.title, a.published_at) for a in articles] == [("Zero date", None), ("Fine", None)]
+
+
+def test_collect_skips_a_feed_that_fails_to_parse(monkeypatch):
+    good = Feed("Good", "https://good.example/rss", "Testland", "center")
+    bad = Feed("Bad", "https://bad.example/rss", "Testland", "center")
+
+    def handler(request):
+        return httpx.Response(200, content=FIXTURE.read_bytes())
+
+    def fake_parse(feed, content, since, limit):
+        if feed is bad:
+            raise RuntimeError("unparseable")
+        return real_parse(feed, content, since, limit)
+
+    import newsagent.collect as collect_mod
+
+    real_parse = collect_mod.parse_feed
+    monkeypatch.setattr(collect_mod, "parse_feed", fake_parse)
+    real_client = httpx.Client
+    monkeypatch.setattr(collect_mod.httpx, "Client", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+
+    articles = collect(lookback_hours=24 * 365 * 10, use_gdelt=False, feeds=(bad, good))
+    assert {a.outlet for a in articles} == {"Good"}

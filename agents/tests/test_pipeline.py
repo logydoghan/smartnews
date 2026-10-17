@@ -25,6 +25,7 @@ def analysis(**overrides):
             AngleView(key="right", label="Right", stance="Costly.", body="Jobs at risk.", refs=[2]),
             AngleView(key="left", label="Left", stance="Too weak.", body="Producers escape.", refs=[1, 7]),
             AngleView(key="made_up", label="Other", stance="?", body="?", refs=[1]),
+            AngleView(key="left", label="Left again", stance="Dup.", body="Dup.", refs=[1]),
             AngleView(key="economic", label="Economic", stance="?", body="?", refs=[]),
         ],
     )
@@ -69,7 +70,7 @@ def test_clean_analysis_drops_bad_refs_and_orders_angles(articles):
     cleaned = clean_analysis(analysis(), story, DEFAULT_ANGLES)
 
     assert [f.refs for f in cleaned.facts] == [[1]]
-    assert [(v.key, v.refs) for v in cleaned.angles] == [("left", [1]), ("right", [2])]
+    assert [(v.key, v.label, v.refs) for v in cleaned.angles] == [("left", "Left", [1]), ("right", "Right", [2])]
 
 
 def test_analyze_story_prompt_lists_sources_and_angles(articles):
@@ -93,6 +94,17 @@ def test_to_records_shapes_briefing(articles):
     assert s["slug"] == "2026-10-16-treaty-signed"
     assert [src["ref"] for src in s["sources"]] == [1, 2, 3]
     assert [v["position"] for v in s["angles"]] == [0, 1]
+
+
+def test_to_records_makes_slugs_unique(articles):
+    long = "European Union leaders agree new sanctions package against Russia over"
+    stories = build_stories(
+        [cluster([0, 1], long + " energy"), cluster([2, 3], long + " oil"), cluster([], "x")],
+        articles, 1, 3,
+    )
+    items = [AnalyzedStory(s, analysis()) for s in stories]
+    slugs = [s["slug"] for s in to_records(date(2026, 10, 17), items)["stories"]]
+    assert slugs[0] == slugs[1].removesuffix("-2") and len(set(slugs)) == 2
 
 
 def test_slugify():

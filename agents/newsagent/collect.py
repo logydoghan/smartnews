@@ -38,7 +38,11 @@ def _entry_time(entry) -> datetime | None:
     stamp = entry.get("published_parsed") or entry.get("updated_parsed")
     if not stamp:
         return None
-    return datetime.fromtimestamp(calendar.timegm(stamp), tz=timezone.utc)
+    try:
+        return datetime.fromtimestamp(calendar.timegm(stamp), tz=timezone.utc)
+    except (ValueError, OverflowError, OSError):
+        # Bogus dates such as 0000-00-00 parse to year -1.
+        return None
 
 
 def parse_feed(feed: Feed, content: bytes, since: datetime, limit: int) -> list[Article]:
@@ -52,9 +56,13 @@ def parse_feed(feed: Feed, content: bytes, since: datetime, limit: int) -> list[
         # Keep undated entries: some feeds omit dates, and the feed order is already recent-first.
         if published and published < since:
             continue
+        try:
+            url = normalize_url(url)
+        except ValueError:
+            continue
         articles.append(
             Article(
-                url=normalize_url(url),
+                url=url,
                 title=title,
                 outlet=feed.outlet,
                 country=feed.country,
@@ -98,7 +106,11 @@ def _fetch_feed(client: httpx.Client, feed: Feed, since: datetime, limit: int) -
     except httpx.HTTPError as exc:
         log.warning("Skipping %s: %s", feed.outlet, exc)
         return []
-    return parse_feed(feed, response.content, since, limit)
+    try:
+        return parse_feed(feed, response.content, since, limit)
+    except Exception:
+        log.exception("Skipping %s: could not parse its feed", feed.outlet)
+        return []
 
 
 def _fetch_gdelt(client: httpx.Client, hours: int) -> list[Article]:

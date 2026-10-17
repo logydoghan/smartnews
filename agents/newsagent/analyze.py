@@ -41,15 +41,17 @@ def format_angles(angles: tuple[Angle, ...]) -> str:
 
 
 def clean_analysis(analysis: StoryAnalysis, story: Story, angles: tuple[Angle, ...]) -> StoryAnalysis:
-    """Drop citations to sources that do not exist and angles that cite nothing."""
+    """Drop citations to sources that do not exist, angles that cite nothing, and repeated angles."""
     valid = set(range(1, len(story.articles) + 1))
     order = {a.key: i for i, a in enumerate(angles)}
     for fact in analysis.facts:
         fact.refs = sorted(set(fact.refs) & valid)
-    kept = []
+    kept, seen = [], set()
     for view in analysis.angles:
         view.refs = sorted(set(view.refs) & valid)
-        if view.key in order and view.refs:
+        # The database allows one view per angle, so the first valid one wins.
+        if view.key in order and view.refs and view.key not in seen:
+            seen.add(view.key)
             kept.append(view)
     analysis.angles = sorted(kept, key=lambda v: order[v.key])
     analysis.facts = [f for f in analysis.facts if f.refs]
