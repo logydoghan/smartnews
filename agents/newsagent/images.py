@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import hashlib
 import logging
+import time
 from typing import Protocol
 
 import httpx
@@ -24,6 +25,7 @@ log = logging.getLogger(__name__)
 BUCKET = "story-images"
 RECRAFT_URL = "https://external.api.recraft.ai/v1/images/generations"
 ATTEMPTS = 2  # a rejected image is redrawn once before the story goes without one
+TIME_BUDGET = 600  # seconds; stories not reached by then go without an image
 
 # Added to every scene so the front page reads as one set.
 HOUSE_STYLE = (
@@ -49,7 +51,7 @@ calm symbols such as an empty table, a damaged bridge, a dove or a map outline.
 CHECK_SYSTEM = """You check illustrations before they appear on a news website. Look at the \
 whole image closely, including small details and backgrounds, and answer honestly."""
 
-CHECK_PROMPT = "Does this illustration break any of the site's rules?"
+CHECK_PROMPT = "Answer each question about this illustration."
 
 
 class ImageBrief(BaseModel):
@@ -95,7 +97,7 @@ class RecraftGenerator:
         self.api_key = api_key
         self.model = model
         self.style_id = style_id
-        self.client = client or httpx.Client(timeout=180)
+        self.client = client or httpx.Client(timeout=httpx.Timeout(120, connect=10))
 
     def generate(self, prompt: str) -> bytes:
         body = {"prompt": prompt, "model": self.model, "size": "3:2"}
@@ -172,7 +174,7 @@ def illustrate(story: dict, llm: StructuredLLM, generator: ImageGenerator, store
         check = llm.ask(CHECK_SYSTEM, CHECK_PROMPT, ImageCheck, image=data, image_type=content_type)
         if check.ok:
             break
-        log.warning("Redrawing image for %r (attempt %d): %s", story["title"], attempt, check.problem)
+        log.warning("Image for %r failed the check (attempt %d): %s", story["title"], attempt, check.problem)
         prompt = f"{brief.scene}\n\nAvoid: {check.problem}\n\n{HOUSE_STYLE}"
     else:
         raise ImageRejected(f"every attempt failed the check, last: {check.problem}")
@@ -181,10 +183,20 @@ def illustrate(story: dict, llm: StructuredLLM, generator: ImageGenerator, store
     story["image_alt"] = brief.alt
 
 
-def add_images(records: dict, llm: StructuredLLM, generator: ImageGenerator, store: ImageStore) -> int:
+def add_images(
+    records: dict,
+    llm: StructuredLLM,
+    generator: ImageGenerator,
+    store: ImageStore,
+    time_budget: float = TIME_BUDGET,
+) -> int:
     """Give each story an illustration in place; returns how many got one."""
     made = 0
+    deadline = time.monotonic() + time_budget
     for story in records["stories"]:
+        if time.monotonic() > deadline:
+            log.warning("Image time budget used up; the remaining stories go without images")
+            break
         try:
             illustrate(story, llm, generator, store)
             made += 1

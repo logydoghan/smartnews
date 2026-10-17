@@ -179,3 +179,12 @@ def test_make_generator_needs_a_recraft_key():
     generator = make_generator(Settings(recraft_api_key="rk", image_model="recraftv4_1_flash"))
     assert isinstance(generator, RecraftGenerator)
     assert generator.model == "recraftv4_1_flash"
+
+
+def test_add_images_stops_when_the_time_budget_is_used_up():
+    data = records("First", "Second")
+    llm = FakeLLM(ImageBrief(scene="A.", alt="A."), OK)
+    generator = FakeGenerator(webp(1))
+
+    assert add_images(data, llm, generator, FakeStore(), time_budget=-1) == 0
+    assert generator.prompts == [] and llm.calls == []

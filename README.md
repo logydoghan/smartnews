@@ -24,9 +24,10 @@ Both halves share one Supabase Postgres database. The agents write with the data
    - `ANTHROPIC_API_KEY`: a Claude API key.
    - `DATABASE_URL`: the Supabase connection string from the dashboard's **Connect** dialog. Use the **Session pooler** URI (`...pooler.supabase.com:5432/postgres`), not the Direct connection: GitHub Actions has no IPv6, and the direct host is IPv6-only.
    - `RECRAFT_API_KEY`: a [Recraft](https://www.recraft.ai) API key, for the image agent. Recraft bills prepaid credit, about $0.035 per image.
-   - `SUPABASE_URL` and `SUPABASE_SECRET_KEY`: the project URL and a secret key (`sb_secret_...`) from **Project Settings → API Keys**, so the image agent can upload to Storage.
+   - `SUPABASE_URL`: the project URL (`https://<ref>.supabase.co`), shown in the dashboard's **Connect** dialog. It is the same value as `NEXT_PUBLIC_SUPABASE_URL` in step 3.
+   - `SUPABASE_SECRET_KEY`: a secret key (`sb_secret_...`) from **Project Settings → API Keys**. With the URL, it lets the image agent upload to Storage.
 
-   Without the last three, the briefing still publishes, just without images.
+   Without the last three, the briefing still publishes, just without images. The briefing is saved before any image is drawn, and the image step stops after 10 minutes, so a slow image service never holds up the news.
 
    The **Morning briefing** workflow then runs every day at 06:00 UTC. Run it by hand from the Actions tab to publish the first briefing.
 3. **Website.** Import the repository into Vercel with `web` as the root directory, and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the anon key, called the publishable key, `sb_publishable_...`, in newer projects). Without them the site shows built-in sample stories.

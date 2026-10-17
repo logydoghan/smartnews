@@ -59,20 +59,26 @@ def main(argv: list[str] | None = None) -> int:
         log.error("No stories were produced; leaving the previous briefing in place")
         return 1
 
+    def save() -> None:
+        if args.json:
+            write_json(args.json, records)
+            log.info("Wrote %s", args.json)
+        if not args.no_db:
+            save_to_database(settings.database_url, records)
+            log.info("Saved briefing for %s with %d stories", records["date"], len(records["stories"]))
+
+    # Publish before drawing, so a slow or failing image service never costs the day's briefing.
+    save()
+
     generator = make_generator(settings) if settings.images else None
     if generator and settings.supabase_url and settings.supabase_secret_key:
         store = SupabaseStorage(settings.supabase_url, settings.supabase_secret_key)
         made = add_images(records, llm, generator, store)
         log.info("Illustrated %d of %d stories", made, len(records["stories"]))
+        if made:
+            save()  # replaces the day's briefing, now with images
     elif settings.images:
         log.warning("Skipping images: set RECRAFT_API_KEY, SUPABASE_URL and SUPABASE_SECRET_KEY")
-
-    if args.json:
-        write_json(args.json, records)
-        log.info("Wrote %s", args.json)
-    if not args.no_db:
-        save_to_database(settings.database_url, records)
-        log.info("Saved briefing for %s with %d stories", records["date"], len(records["stories"]))
     return 0
 
 
