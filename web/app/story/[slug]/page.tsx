@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { AngleCompare } from "@/components/AngleCompare";
 import { LeanBar } from "@/components/LeanBar";
+import { StoryComments, StorySave } from "@/components/StoryAccountParts";
 import { StoryImage } from "@/components/StoryImage";
 import { SiteFooter, SiteHeader } from "@/components/SiteHeader";
 import { getLatestBriefing, getStory } from "@/lib/data";
@@ -59,6 +60,9 @@ async function StoryContent({ params }: Pick<PageProps<"/story/[slug]">, "params
           {plural(story.sources.length, "source")} from {plural(countries.size, "country", "countries")} ·{" "}
           {plural(story.angles.length, "angle")} · analysis written by AI
         </div>
+        <Suspense>
+          <StorySave slug={story.slug} />
+        </Suspense>
         {story.image_url && (
           <figure className="mt-2 flex flex-col gap-2">
             <StoryImage src={story.image_url} alt={story.image_alt ?? ""} sizes="(min-width: 860px) 820px, 100vw" eager />
@@ -122,6 +126,15 @@ async function StoryContent({ params }: Pick<PageProps<"/story/[slug]">, "params
           Each angle is a summary written by AI from the sources it cites. It describes how that side sees the
           story; it is not this site&apos;s opinion.
         </p>
+      </section>
+
+      <section id="comments" aria-labelledby="comments-heading" className="flex max-w-[820px] scroll-mt-6 flex-col gap-4">
+        <h2 id="comments-heading" className="font-serif text-[26px] font-semibold">
+          Comments
+        </h2>
+        <Suspense fallback={<p className="text-muted">Loading comments…</p>}>
+          <StoryComments slug={story.slug} />
+        </Suspense>
       </section>
     </div>
   );

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { StoryCard } from "@/components/StoryCard";
 import { StoryImage } from "@/components/StoryImage";
 import { plural, sectionLabel } from "@/lib/format";
 import { CATEGORIES, type Category, type Story } from "@/lib/types";
@@ -41,26 +42,7 @@ export function BriefingView({ stories }: { stories: Story[] }) {
       {rest.length > 0 && (
         <section aria-label="More stories" className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-8 pt-8">
           {rest.map((s) => (
-            <Link
-              key={s.slug}
-              href={`/story/${s.slug}`}
-              className="group flex flex-col gap-2.5 border-b border-rule pb-6"
-            >
-              {s.image_url && (
-                <StoryImage
-                  src={s.image_url}
-                  alt=""
-                  sizes="(min-width: 1240px) 400px, (min-width: 640px) 50vw, 100vw"
-                  className="mb-1.5"
-                />
-              )}
-              <div className="text-xs font-semibold uppercase tracking-wider text-muted">{sectionLabel(s)}</div>
-              <div className="font-serif text-[23px] font-semibold leading-tight group-hover:text-accent">{s.title}</div>
-              <p className="text-[15px] leading-normal text-body">{s.dek}</p>
-              <div className="text-[13px] text-muted">
-                {plural(s.angles.length, "angle")} · {plural(s.sources.length, "source")} · {s.agreement_level}
-              </div>
-            </Link>
+            <StoryCard key={s.slug} story={s} />
           ))}
         </section>
       )}

@@ -21,7 +21,7 @@ Both halves share one Supabase Postgres database. The agents write with the data
 
 ## Setup
 
-1. **Database.** Create a Supabase project and run the files in `supabase/migrations/` in order (`0001_init.sql`, `0002_story_images.sql`, then `0003_categories.sql`) in its SQL editor, or use `supabase db push`.
+1. **Database.** Create a Supabase project and run the files in `supabase/migrations/` in order (`0001_init.sql`, `0002_story_images.sql`, `0003_categories.sql`, then `0004_accounts.sql`) in its SQL editor, or use `supabase db push`.
 2. **Agents.** In the GitHub repository, add these Actions secrets:
    - `ANTHROPIC_API_KEY`: a Claude API key.
    - `DATABASE_URL`: the Supabase connection string from the dashboard's **Connect** dialog. Use the **Session pooler** URI (`...pooler.supabase.com:5432/postgres`), not the Direct connection: GitHub Actions has no IPv6, and the direct host is IPv6-only.
@@ -33,6 +33,7 @@ Both halves share one Supabase Postgres database. The agents write with the data
 
    The **Morning briefing** workflow then runs every day at 06:00 UTC. Run it by hand from the Actions tab to publish the first briefing.
 3. **Website.** Import the repository into Vercel with `web` as the root directory, and set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` (the anon key, called the publishable key, `sb_publishable_...`, in newer projects). Without them the site shows built-in sample stories.
+4. **Reader accounts.** In Supabase, open **Authentication → URL Configuration**. Set **Site URL** to the site's address (for example `https://smartnews.vercel.app`) and add `https://<your-site>/**` under **Redirect URLs**, so the link in the sign-up email comes back to the site. Email and password sign-in is on by default, and new readers confirm their email before they can log in. Supabase's built-in email sender only sends a few emails an hour; for real traffic, add your own SMTP server under **Authentication → Emails**.
 
 ## Running locally
 
@@ -63,5 +64,6 @@ Settings for the agents are environment variables, listed in `agents/.env.exampl
 
 - The agents read headlines and RSS summaries, not full article text, write in their own words, and link out to every source.
 - Rerunning the agents on the same day replaces that day's briefing.
+- Readers can sign up, save stories to their **Saved** page, and comment under each story. Saves and comments point at a story by its slug, so a rerun that rewrites a story's headline drops the saves and comments on the old version from view.
 - Story images are illustrations, never photo-like, and never show recognizable real people. The site labels each one as made by AI. Before an image is saved, Claude looks at it and rejects text, logos, photo-like images and realistic faces; a rejected image is redrawn once, then the story goes without one.
 - Images are stored exactly as Recraft returns them, so their provenance metadata stays intact. The house style lives in `HOUSE_STYLE` in `agents/newsagent/images.py`; a Recraft style made from reference images can be added with `RECRAFT_STYLE_ID`.
